@@ -1,6 +1,7 @@
 import Header from '@/components/layout/Header';
 import KPICard from '@/components/dashboard/KPICard';
-import MERChart from '@/components/dashboard/MERChart';
+import MERChartLive from '@/components/dashboard/MERChartLive';
+import ConversionRateCard from '@/components/dashboard/ConversionRateCard';
 import CoreWebVitals from '@/components/dashboard/CoreWebVitals';
 import ChannelPerformance from '@/components/dashboard/ChannelPerformance';
 import ConversionTable from '@/components/dashboard/ConversionTable';
@@ -25,9 +26,16 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Main Charts */}
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <MERChart />
+        {/* Main Charts - MER & Conversion Rate (GA4 Connected) */}
+        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <MERChartLive dateRange="30d" />
+          </div>
+          <ConversionRateCard dateRange="30d" />
+        </div>
+
+        {/* SEO Recovery */}
+        <div className="mb-6">
           <SEORecovery />
         </div>
 
