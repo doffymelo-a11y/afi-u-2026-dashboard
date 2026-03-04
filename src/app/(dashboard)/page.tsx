@@ -2,10 +2,11 @@ import Header from '@/components/layout/Header';
 import KPICard from '@/components/dashboard/KPICard';
 import MERChartLive from '@/components/dashboard/MERChartLive';
 import ConversionRateCard from '@/components/dashboard/ConversionRateCard';
-import CoreWebVitals from '@/components/dashboard/CoreWebVitals';
+import CoreWebVitalsLive from '@/components/dashboard/CoreWebVitalsLive';
 import ChannelPerformance from '@/components/dashboard/ChannelPerformance';
 import ConversionTable from '@/components/dashboard/ConversionTable';
-import SEORecovery from '@/components/dashboard/SEORecovery';
+import BrandedTrafficChart from '@/components/dashboard/BrandedTrafficChart';
+import SEOHealthIndex from '@/components/dashboard/SEOHealthIndex';
 import { kpiSummary } from '@/data/mockData';
 
 export default function DashboardPage() {
@@ -34,15 +35,16 @@ export default function DashboardPage() {
           <ConversionRateCard dateRange="30d" />
         </div>
 
-        {/* SEO Recovery */}
-        <div className="mb-6">
-          <SEORecovery />
+        {/* SEO Section - Brand Traffic & Health */}
+        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <BrandedTrafficChart dateRange="30d" />
+          <SEOHealthIndex />
         </div>
 
-        {/* Secondary Charts */}
+        {/* Performance - Channels & Core Web Vitals */}
         <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <ChannelPerformance />
-          <CoreWebVitals />
+          <CoreWebVitalsLive strategy="mobile" />
         </div>
 
         {/* Conversion Table */}
