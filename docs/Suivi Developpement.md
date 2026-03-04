@@ -1,85 +1,58 @@
 # Suivi Développement - Dashboard Performance 2026
 
 **Démarré le :** 03/03/2026
-**Statut global :** En cours
+**Statut global :** TERMINÉ ✅
 
 ---
 
 ## Prompts Reçus
 
 ### Prompt 1 : Initialisation Architecture & UI de base
-**Statut :** Terminé
+**Statut :** Terminé ✅
 **Date :** 03/03/2026
 
-**Objectifs :**
-- [x] Initialiser projet Next.js (App Router)
-- [x] Installer et configurer Tailwind CSS
-- [x] Installer Tremor pour les graphiques
-- [x] Créer Layout (sidebar + header)
-- [x] Implémenter protection mot de passe (middleware)
-- [x] Générer données mockées
-- [x] Valider le design de base (build OK)
+- [x] Next.js 16 (App Router) + Tailwind CSS + Tremor
+- [x] Layout avec sidebar + header
+- [x] Protection par mot de passe
+- [x] Données mockées
 
 ---
 
 ### Prompt 2 : Connexion Google Analytics 4
-**Statut :** Terminé
+**Statut :** Terminé ✅
 **Date :** 03/03/2026
 
-**Objectifs :**
-- [x] Installer @google-analytics/data SDK
-- [x] Créer service GA4 (`/lib/ga4.ts`)
-- [x] Créer API route (`/api/analytics`)
-- [x] Requêtes GA4 : sessionSourceMedium, advertiserAdCost, conversions, totalRevenue
-- [x] Conversions basées sur événements : `purchase` et `generate_lead`
-- [x] Filtrage par campaignName
-- [x] Composant Card Taux de conversion global
-- [x] Composant Graphique MER (revenus vs dépenses)
+- [x] Service GA4 avec requêtes MER, conversions, canaux
+- [x] Événements : `purchase` et `generate_lead`
+- [x] Filtrage par campagne
+- [x] Composants MERChartLive et ConversionRateCard
 
 ---
 
 ### Prompt 3 : SEO & Core Web Vitals
-**Statut :** Terminé
+**Statut :** Terminé ✅
 **Date :** 03/03/2026
 
-**Objectifs :**
-- [x] Installer googleapis pour GSC
-- [x] Créer service GSC (`/lib/gsc.ts`)
-- [x] Créer service PageSpeed Insights (`/lib/pagespeed.ts`)
-- [x] Trafic Branded vs Non-Branded (filtre par nom de marque)
-- [x] Core Web Vitals : LCP, **INP** (remplace FID), CLS
-- [x] Module erreurs 404 / Index de santé SEO
-- [x] Créer page `/seo` dédiée
-
-**Fichiers créés :**
-```
-src/
-├── lib/
-│   ├── gsc.ts                        # Service Google Search Console
-│   └── pagespeed.ts                  # Service PageSpeed Insights
-├── app/
-│   ├── api/
-│   │   ├── seo/route.ts              # API GSC
-│   │   └── pagespeed/route.ts        # API PageSpeed
-│   └── (dashboard)/
-│       └── seo/page.tsx              # Page SEO dédiée
-└── components/dashboard/
-    ├── BrandedTrafficChart.tsx       # Graphique Brand vs Non-Brand
-    ├── CoreWebVitalsLive.tsx         # Cards CWV avec feux tricolores
-    └── SEOHealthIndex.tsx            # Module erreurs 404
-```
-
-**Configuration requise :**
-```bash
-GSC_SITE_URL=https://www.example.com
-BRAND_NAME=MonEntreprise
-SITE_URL_FOR_PAGESPEED=https://www.example.com
-PAGESPEED_API_KEY=optionnel
-```
+- [x] Service GSC (Brand vs Non-Brand)
+- [x] Service PageSpeed Insights (LCP, INP, CLS)
+- [x] Module erreurs 404
+- [x] Page `/seo` dédiée
 
 ---
 
-## Structure des fichiers
+### Prompt 4 : Polissage, Filtres de date et Export
+**Statut :** Terminé ✅
+**Date :** 03/03/2026
+
+- [x] Date Picker global (7j, 30j, 90j, YTD, Année précédente)
+- [x] Tous les composants synchronisés avec la date
+- [x] Responsive design parfait mobile
+- [x] DonutChart pour répartition des leads
+- [x] Export : Copier résumé KPIs / Imprimer PDF
+
+---
+
+## Structure finale
 
 ```
 dashboard/
@@ -87,45 +60,60 @@ dashboard/
 │   ├── app/
 │   │   ├── (dashboard)/
 │   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx              # Vue d'ensemble
-│   │   │   └── seo/page.tsx          # Page SEO
+│   │   │   ├── page.tsx
+│   │   │   └── seo/page.tsx
 │   │   ├── api/
 │   │   │   ├── auth/route.ts
-│   │   │   ├── analytics/route.ts    # GA4
-│   │   │   ├── seo/route.ts          # GSC
-│   │   │   └── pagespeed/route.ts    # PageSpeed
+│   │   │   ├── analytics/route.ts
+│   │   │   ├── seo/route.ts
+│   │   │   └── pagespeed/route.ts
 │   │   ├── login/page.tsx
 │   │   └── globals.css
-│   ├── components/dashboard/
-│   │   ├── KPICard.tsx
-│   │   ├── MERChart.tsx
-│   │   ├── MERChartLive.tsx
-│   │   ├── ConversionRateCard.tsx
-│   │   ├── CoreWebVitals.tsx
-│   │   ├── CoreWebVitalsLive.tsx
-│   │   ├── ChannelPerformance.tsx
-│   │   ├── ConversionTable.tsx
-│   │   ├── SEORecovery.tsx
-│   │   ├── BrandedTrafficChart.tsx
-│   │   └── SEOHealthIndex.tsx
+│   ├── components/
+│   │   ├── dashboard/
+│   │   │   ├── KPICard.tsx
+│   │   │   ├── MERChart.tsx
+│   │   │   ├── MERChartLive.tsx
+│   │   │   ├── ConversionRateCard.tsx
+│   │   │   ├── CoreWebVitals.tsx
+│   │   │   ├── CoreWebVitalsLive.tsx
+│   │   │   ├── ChannelPerformance.tsx
+│   │   │   ├── ChannelDonut.tsx
+│   │   │   ├── ConversionTable.tsx
+│   │   │   ├── SEORecovery.tsx
+│   │   │   ├── BrandedTrafficChart.tsx
+│   │   │   └── SEOHealthIndex.tsx
+│   │   └── layout/
+│   │       ├── Header.tsx (avec DatePicker + Export)
+│   │       └── Sidebar.tsx (responsive mobile)
+│   ├── contexts/
+│   │   └── DateRangeContext.tsx
 │   ├── lib/
 │   │   ├── ga4.ts
 │   │   ├── gsc.ts
 │   │   └── pagespeed.ts
 │   └── data/mockData.ts
+├── .env.local (À CONFIGURER)
 ├── .env.example
 └── docs/
 ```
 
 ---
 
-## Historique des modifications
+## GitHub Repository
 
-| Date | Action | Statut |
-|------|--------|--------|
-| 03/03/2026 | Prompt 1 - Architecture & UI de base | Terminé |
-| 03/03/2026 | Prompt 2 - Connexion Google Analytics 4 | Terminé |
-| 03/03/2026 | Prompt 3 - SEO & Core Web Vitals | Terminé |
+**URL :** https://github.com/doffymelo-a11y/afi-u-2026-dashboard
+
+**Commits :**
+| Date | Message | Hash |
+|------|---------|------|
+| 03/03/2026 | feat: Initial dashboard setup | b1fbf10 |
+| 03/03/2026 | docs: Add project documentation | 0cf0969 |
+| 03/03/2026 | feat: Connect GA4 API | 3aef3ef |
+| 03/03/2026 | docs: Update tracking Prompt 2 | d951c54 |
+| 03/03/2026 | feat: Add GSC and PageSpeed | cc45e67 |
+| 03/03/2026 | docs: Update tracking Prompt 3 | 68a85fe |
+| 03/03/2026 | feat: Date picker, responsive, export | 295510e |
 
 ---
 
@@ -140,84 +128,24 @@ npm run dev
 
 **Mot de passe :** `kpi2026`
 
-**Pages disponibles :**
-- `/` - Vue d'ensemble
-- `/seo` - SEO & Migration
-- `/login` - Connexion
-
 ---
 
-## GitHub Repository
-
-**URL :** https://github.com/doffymelo-a11y/afi-u-2026-dashboard
-
-**Commits :**
-| Date | Message | Hash |
-|------|---------|------|
-| 03/03/2026 | feat: Initial dashboard setup with Tremor UI | b1fbf10 |
-| 03/03/2026 | docs: Add project documentation | 0cf0969 |
-| 03/03/2026 | feat: Connect Google Analytics 4 API | 3aef3ef |
-| 03/03/2026 | docs: Update development tracking for Prompt 2 | d951c54 |
-| 03/03/2026 | feat: Add GSC and PageSpeed Insights integration | cc45e67 |
-
----
-
-## Prochaines étapes
-
-En attente du Prompt 4...
-
----
-
-## API Endpoints
-
-### Google Analytics 4
-
-| Endpoint | Params | Description |
-|----------|--------|-------------|
-| `/api/analytics?type=overview` | range | Vue d'ensemble |
-| `/api/analytics?type=mer` | range | Historique MER |
-| `/api/analytics?type=mer-global` | range | MER global avec variation |
-| `/api/analytics?type=conversions` | range | Taux par événement |
-| `/api/analytics?type=channels` | range | Données par canal |
-| `/api/analytics?type=campaigns` | range, campaign | Conversions par campagne |
-
-### Google Search Console
-
-| Endpoint | Params | Description |
-|----------|--------|-------------|
-| `/api/seo?type=branded` | range | Trafic Brand vs Non-Brand |
-| `/api/seo?type=branded-summary` | range | Résumé avec tendance |
-| `/api/seo?type=errors` | - | Erreurs 404 |
-| `/api/seo?type=performance` | range | Métriques GSC |
-
-### PageSpeed Insights
-
-| Endpoint | Params | Description |
-|----------|--------|-------------|
-| `/api/pagespeed` | strategy, url | Core Web Vitals |
-
-**Params communs :**
-- `range`: `7d`, `30d`, `90d` (défaut: `30d`)
-- `strategy`: `mobile`, `desktop` (défaut: `mobile`)
-
----
-
-## Configuration complète (.env.local)
+## Configuration requise (.env.local)
 
 ```bash
 # Google Analytics 4
-GA4_PROPERTY_ID=
+GA4_PROPERTY_ID=123456789
 
 # Google Search Console
-GSC_SITE_URL=
-BRAND_NAME=
+GSC_SITE_URL=https://www.example.com
+BRAND_NAME=MonEntreprise
 
 # PageSpeed Insights
-SITE_URL_FOR_PAGESPEED=
-PAGESPEED_API_KEY=
+SITE_URL_FOR_PAGESPEED=https://www.example.com
+PAGESPEED_API_KEY=optionnel
 
-# Authentification Google
-GOOGLE_APPLICATION_CREDENTIALS=
+# Service Account
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
 
 # Dashboard
 DASHBOARD_PASSWORD=kpi2026
@@ -225,4 +153,52 @@ DASHBOARD_PASSWORD=kpi2026
 
 ---
 
-*Dernière mise à jour : 03/03/2026*
+## Fonctionnalités
+
+### Bloc A : MER & Rentabilité
+- ✅ MER global avec tendance
+- ✅ Graphique revenus vs dépenses
+- ✅ Comparaison période précédente
+
+### Bloc B : SEO & Migration
+- ✅ Trafic Brand vs Non-Brand
+- ✅ Core Web Vitals (LCP, INP, CLS)
+- ✅ Index de santé 404
+- ✅ Feux tricolores
+
+### Bloc C : Canaux d'acquisition
+- ✅ Blended CPL
+- ✅ DonutChart répartition leads
+- ✅ Performance par canal
+
+### Bloc D : Conversions
+- ✅ Taux de conversion global
+- ✅ Événements purchase + generate_lead
+- ✅ Tableau détaillé par campagne
+
+### Export
+- ✅ Copier résumé KPIs (clipboard)
+- ✅ Imprimer / PDF
+
+### Responsive
+- ✅ Mobile-first design
+- ✅ Sidebar hamburger menu
+- ✅ Grilles adaptatives
+
+---
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/analytics?type=overview` | Vue d'ensemble GA4 |
+| `/api/analytics?type=mer` | Historique MER |
+| `/api/analytics?type=conversions` | Taux par événement |
+| `/api/analytics?type=channels` | Données par canal |
+| `/api/seo?type=branded` | Trafic Brand vs Non-Brand |
+| `/api/seo?type=errors` | Erreurs 404 |
+| `/api/pagespeed` | Core Web Vitals |
+
+---
+
+*Développement terminé le 03/03/2026*
