@@ -4,24 +4,66 @@ import {
   getConversionData,
   getChannelCostData,
   getCampaignConversions,
+  getConversionsBySource,
   getGlobalMER,
   getBlendedCPL,
+  getOverview,
 } from '@/lib/ga4';
 
 // Helper pour calculer les dates
-function getDateRange(range: string): {
+function getDateRange(
+  range: string,
+  customStart?: string | null,
+  customEnd?: string | null
+): {
   startDate: string;
   endDate: string;
   previousStartDate: string;
   previousEndDate: string;
 } {
   const today = new Date();
+
+  // Support custom date range
+  if (range === 'custom' && customStart && customEnd) {
+    const startDate = customStart;
+    const endDate = customEnd;
+
+    const startObj = new Date(customStart);
+    const endObj = new Date(customEnd);
+    const daysBack = Math.ceil((endObj.getTime() - startObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    const previousEndObj = new Date(startObj);
+    previousEndObj.setDate(previousEndObj.getDate() - 1);
+    const previousEndDate = previousEndObj.toISOString().split('T')[0];
+
+    const previousStartObj = new Date(previousEndObj);
+    previousStartObj.setDate(previousStartObj.getDate() - daysBack);
+    const previousStartDate = previousStartObj.toISOString().split('T')[0];
+
+    return { startDate, endDate, previousStartDate, previousEndDate };
+  }
+
   const endDate = today.toISOString().split('T')[0];
 
   let daysBack = 30;
   if (range === '7d') daysBack = 7;
   else if (range === '90d') daysBack = 90;
   else if (range === '12m') daysBack = 365;
+  else if (range === 'ytd') {
+    // Year to date
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    const startDate = startOfYear.toISOString().split('T')[0];
+    const previousStartDate = new Date(today.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+    const previousEndDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    return { startDate, endDate, previousStartDate, previousEndDate };
+  } else if (range === 'ly') {
+    // Last year
+    const startDate = new Date(today.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+    const endDateLY = new Date(today.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+    const previousStartDate = new Date(today.getFullYear() - 2, 0, 1).toISOString().split('T')[0];
+    const previousEndDate = new Date(today.getFullYear() - 2, 11, 31).toISOString().split('T')[0];
+    return { startDate, endDate: endDateLY, previousStartDate, previousEndDate };
+  }
 
   const startDateObj = new Date(today);
   startDateObj.setDate(startDateObj.getDate() - daysBack);
@@ -44,13 +86,22 @@ export async function GET(request: Request) {
   const type = searchParams.get('type') || 'overview';
   const range = searchParams.get('range') || '30d';
   const campaign = searchParams.get('campaign') || undefined;
+  const customStart = searchParams.get('startDate');
+  const customEnd = searchParams.get('endDate');
 
-  const { startDate, endDate, previousStartDate, previousEndDate } = getDateRange(range);
+  const { startDate, endDate, previousStartDate, previousEndDate } = getDateRange(
+    range,
+    customStart,
+    customEnd
+  );
 
   try {
     // Vérifier si GA4 est configuré
+    console.log('[GA4 DEBUG] Property ID:', process.env.GA4_PROPERTY_ID);
+    console.log('[GA4 DEBUG] Credentials path:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
     if (!process.env.GA4_PROPERTY_ID) {
-      // Retourner des données mockées si non configuré
+      console.log('[GA4 DEBUG] No property ID - returning mock data');
       return NextResponse.json({
         success: true,
         mock: true,
@@ -79,7 +130,7 @@ export async function GET(request: Request) {
         break;
 
       case 'campaigns':
-        data = await getCampaignConversions(startDate, endDate, campaign);
+        data = await getConversionsBySource(startDate, endDate);
         break;
 
       case 'blended-cpl':
@@ -89,15 +140,17 @@ export async function GET(request: Request) {
       case 'overview':
       default:
         // Récupère toutes les données principales
-        const [merGlobal, conversions, blendedCPL] = await Promise.all([
+        const [merGlobal, conversions, blendedCPL, overview] = await Promise.all([
           getGlobalMER(startDate, endDate, previousStartDate, previousEndDate),
           getConversionData(startDate, endDate, previousStartDate, previousEndDate),
           getBlendedCPL(startDate, endDate),
+          getOverview(startDate, endDate, previousStartDate, previousEndDate),
         ]);
-        data = { merGlobal, conversions, blendedCPL };
+        data = { merGlobal, conversions, blendedCPL, overview };
         break;
     }
 
+    console.log('[GA4 DEBUG] Data returned:', JSON.stringify(data).substring(0, 500));
     return NextResponse.json({
       success: true,
       mock: false,
@@ -105,7 +158,9 @@ export async function GET(request: Request) {
       data,
     });
   } catch (error) {
-    console.error('GA4 API Error:', error);
+    console.error('[GA4 DEBUG] API Error:', error);
+    console.error('[GA4 DEBUG] Error message:', error instanceof Error ? error.message : 'Unknown');
+    console.error('[GA4 DEBUG] Error stack:', error instanceof Error ? error.stack : 'No stack');
     return NextResponse.json(
       {
         success: false,
@@ -172,10 +227,11 @@ function getMockData(type: string) {
 
     case 'campaigns':
       return [
-        { campaignName: 'Brand - Search', conversions: 450, cost: 12500, cpa: 27.78, rate: 5.2 },
-        { campaignName: 'Generic - Search', conversions: 380, cost: 28000, cpa: 73.68, rate: 2.8 },
-        { campaignName: 'Remarketing', conversions: 290, cost: 8500, cpa: 29.31, rate: 8.5 },
-        { campaignName: 'Meta - Prospecting', conversions: 520, cost: 35000, cpa: 67.31, rate: 2.1 },
+        { source: 'google / cpc', campaign: 'Brand - Search', sessions: 8650, conversions: 450, leads: 120, rate: 5.2, cost: 1200, cpa: 27.78 },
+        { source: 'google / cpc', campaign: 'Generic - Search', sessions: 13571, conversions: 380, leads: 95, rate: 2.8, cost: 800, cpa: 73.68 },
+        { source: 'facebook / cpc', campaign: 'Remarketing', sessions: 3412, conversions: 290, leads: 180, rate: 8.5, cost: 950, cpa: 29.31 },
+        { source: 'facebook / cpc', campaign: 'Prospecting', sessions: 24762, conversions: 520, leads: 340, rate: 2.1, cost: 1350, cpa: 67.31 },
+        { source: 'google / organic', campaign: '(not set)', sessions: 45000, conversions: 890, leads: 450, rate: 1.98, cost: 0, cpa: 0 },
       ];
 
     case 'blended-cpl':

@@ -1,7 +1,7 @@
 'use client';
 
 import Header from '@/components/layout/Header';
-import KPICard from '@/components/dashboard/KPICard';
+import KPISummaryLive from '@/components/dashboard/KPISummaryLive';
 import MERChartLive from '@/components/dashboard/MERChartLive';
 import ConversionRateCard from '@/components/dashboard/ConversionRateCard';
 import CoreWebVitalsLive from '@/components/dashboard/CoreWebVitalsLive';
@@ -9,24 +9,15 @@ import ChannelDonut from '@/components/dashboard/ChannelDonut';
 import ConversionTable from '@/components/dashboard/ConversionTable';
 import BrandedTrafficChart from '@/components/dashboard/BrandedTrafficChart';
 import SEOHealthIndex from '@/components/dashboard/SEOHealthIndex';
-import { kpiSummary } from '@/data/mockData';
 
 export default function DashboardPage() {
   return (
     <>
       <Header title="Vue d'ensemble" />
       <div className="p-4 sm:p-6">
-        {/* KPI Summary Cards - Responsive grid */}
-        <div className="mb-4 sm:mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {kpiSummary.map((kpi) => (
-            <KPICard
-              key={kpi.title}
-              title={kpi.title}
-              value={kpi.value}
-              change={kpi.change}
-              changeType={kpi.changeType}
-            />
-          ))}
+        {/* KPI Summary Cards - Live data */}
+        <div className="mb-4 sm:mb-6">
+          <KPISummaryLive />
         </div>
 
         {/* Main Charts - MER & Conversion Rate */}

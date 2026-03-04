@@ -14,8 +14,9 @@ interface ConversionData {
 }
 
 export default function ConversionRateCard() {
-  const { dateRange } = useDateRange();
+  const { dateRange, customDates, comparisonEnabled, getComparisonDateStrings } = useDateRange();
   const [data, setData] = useState<ConversionData[]>([]);
+  const [comparisonData, setComparisonData] = useState<ConversionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMock, setIsMock] = useState(false);
 
@@ -23,10 +24,29 @@ export default function ConversionRateCard() {
     async function fetchData() {
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics?type=conversions&range=${dateRange}`);
+        let url = `/api/analytics?type=conversions&range=${dateRange}`;
+        if (dateRange === 'custom' && customDates) {
+          url += `&startDate=${customDates.startDate}&endDate=${customDates.endDate}`;
+        }
+        const response = await fetch(url);
         const result = await response.json();
         setData(result.data || []);
         setIsMock(result.mock || false);
+
+        // Fetch comparison data if enabled
+        if (comparisonEnabled) {
+          const compDates = getComparisonDateStrings();
+          if (compDates) {
+            const compUrl = `/api/analytics?type=conversions&range=custom&startDate=${compDates.startDate}&endDate=${compDates.endDate}`;
+            const compResponse = await fetch(compUrl);
+            const compResult = await compResponse.json();
+            if (compResult.data) {
+              setComparisonData(compResult.data);
+            }
+          }
+        } else {
+          setComparisonData([]);
+        }
       } catch (error) {
         console.error('Error fetching conversion data:', error);
       } finally {
@@ -34,7 +54,7 @@ export default function ConversionRateCard() {
       }
     }
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, customDates, comparisonEnabled, getComparisonDateStrings]);
 
   if (loading) {
     return (
@@ -47,14 +67,27 @@ export default function ConversionRateCard() {
   const globalRate = data.length > 0
     ? data.reduce((sum, d) => sum + d.rate, 0) / data.length
     : 0;
-  const previousGlobalRate = data.length > 0
-    ? data.reduce((sum, d) => sum + d.previousRate, 0) / data.length
+
+  // Calculate comparison rate when enabled
+  const comparisonGlobalRate = comparisonData.length > 0
+    ? comparisonData.reduce((sum, d) => sum + d.rate, 0) / comparisonData.length
     : 0;
-  const globalChange = previousGlobalRate > 0
-    ? ((globalRate - previousGlobalRate) / previousGlobalRate) * 100
+
+  // Use comparison data or previous period data for change calculation
+  const referenceRate = comparisonEnabled && comparisonData.length > 0
+    ? comparisonGlobalRate
+    : (data.length > 0 ? data.reduce((sum, d) => sum + d.previousRate, 0) / data.length : 0);
+
+  const globalChange = referenceRate > 0
+    ? ((globalRate - referenceRate) / referenceRate) * 100
     : 0;
 
   const deltaType = globalChange > 0 ? 'increase' : globalChange < 0 ? 'decrease' : 'unchanged';
+
+  // Helper to get comparison item
+  const getComparisonItem = (eventName: string) => {
+    return comparisonData.find(c => c.eventName === eventName);
+  };
 
   return (
     <Card>
@@ -68,7 +101,11 @@ export default function ConversionRateCard() {
         </BadgeDelta>
       </Flex>
 
-      <Text className="mt-4 mb-2">vs période précédente</Text>
+      <Text className="mt-4 mb-2">
+        {comparisonEnabled && comparisonData.length > 0
+          ? `vs ${comparisonGlobalRate.toFixed(2)}% comparé`
+          : 'vs période précédente'}
+      </Text>
       <ProgressBar
         value={Math.min(100, (globalRate / 10) * 100)}
         color={globalChange >= 0 ? 'emerald' : 'red'}
@@ -76,19 +113,31 @@ export default function ConversionRateCard() {
       />
 
       <div className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-200 pt-4">
-        {data.map((item) => (
-          <div key={item.eventName} className="text-center">
-            <Text className="text-xs text-slate-500 capitalize">
-              {item.eventName === 'purchase' ? 'Achats' : 'Leads'}
-            </Text>
-            <p className="text-lg font-semibold text-slate-900">
-              {item.conversions.toLocaleString('fr-FR')}
-            </p>
-            <Text className={`text-xs ${item.changePercent >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {item.changePercent > 0 ? '+' : ''}{item.changePercent.toFixed(1)}%
-            </Text>
-          </div>
-        ))}
+        {data.map((item) => {
+          const compItem = getComparisonItem(item.eventName);
+          const itemChange = comparisonEnabled && compItem
+            ? ((item.conversions - compItem.conversions) / compItem.conversions) * 100
+            : item.changePercent;
+
+          return (
+            <div key={item.eventName} className="text-center">
+              <Text className="text-xs text-slate-500 capitalize">
+                {item.eventName === 'purchase' ? 'Achats' : 'Leads'}
+              </Text>
+              <p className="text-lg font-semibold text-slate-900">
+                {item.conversions.toLocaleString('fr-FR')}
+              </p>
+              <Text className={`text-xs ${itemChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {itemChange > 0 ? '+' : ''}{itemChange.toFixed(1)}%
+              </Text>
+              {comparisonEnabled && compItem && (
+                <Text className="text-xs text-slate-400">
+                  vs {compItem.conversions.toLocaleString('fr-FR')}
+                </Text>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {isMock && (

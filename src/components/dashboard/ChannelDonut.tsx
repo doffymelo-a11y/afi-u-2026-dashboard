@@ -13,7 +13,7 @@ interface ChannelData {
 const COLORS = ['blue', 'emerald', 'amber', 'indigo', 'rose'];
 
 export default function ChannelDonut() {
-  const { dateRange } = useDateRange();
+  const { dateRange, customDates } = useDateRange();
   const [data, setData] = useState<ChannelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMock, setIsMock] = useState(false);
@@ -22,13 +22,17 @@ export default function ChannelDonut() {
     async function fetchData() {
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics?type=channels&range=${dateRange}`);
+        let url = `/api/analytics?type=channels&range=${dateRange}`;
+        if (dateRange === 'custom' && customDates) {
+          url += `&startDate=${customDates.startDate}&endDate=${customDates.endDate}`;
+        }
+        const response = await fetch(url);
         const result = await response.json();
 
-        // Transformer les données pour le DonutChart
-        const channelData = (result.data || []).map((ch: { channel: string; conversions: number }, index: number) => ({
+        // Transformer les données pour le DonutChart (leads + conversions)
+        const channelData = (result.data || []).map((ch: { channel: string; conversions: number; leads: number }, index: number) => ({
           channel: ch.channel,
-          leads: ch.conversions || 0,
+          leads: (ch.leads || 0) + (ch.conversions || 0),
           color: COLORS[index % COLORS.length],
         }));
 
@@ -41,7 +45,7 @@ export default function ChannelDonut() {
       }
     }
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, customDates]);
 
   if (loading) {
     return (

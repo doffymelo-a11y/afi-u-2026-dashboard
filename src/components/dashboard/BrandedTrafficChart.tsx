@@ -21,7 +21,7 @@ interface BrandedSummary {
 }
 
 export default function BrandedTrafficChart() {
-  const { dateRange } = useDateRange();
+  const { dateRange, customDates } = useDateRange();
   const [chartData, setChartData] = useState<BrandedTrafficData[]>([]);
   const [summary, setSummary] = useState<BrandedSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,9 +31,14 @@ export default function BrandedTrafficChart() {
     async function fetchData() {
       setLoading(true);
       try {
+        let baseParams = `range=${dateRange}`;
+        if (dateRange === 'custom' && customDates) {
+          baseParams += `&startDate=${customDates.startDate}&endDate=${customDates.endDate}`;
+        }
+
         const [trafficRes, summaryRes] = await Promise.all([
-          fetch(`/api/seo?type=branded&range=${dateRange}`),
-          fetch(`/api/seo?type=branded-summary&range=${dateRange}`),
+          fetch(`/api/seo?type=branded&${baseParams}`),
+          fetch(`/api/seo?type=branded-summary&${baseParams}`),
         ]);
 
         const trafficResult = await trafficRes.json();
@@ -49,7 +54,7 @@ export default function BrandedTrafficChart() {
       }
     }
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, customDates]);
 
   if (loading) {
     return (
