@@ -4,17 +4,33 @@ import { getBudgetForPeriod, identifyChannel, MONTHLY_BUDGETS } from './adSpendC
 // Configuration - À définir via variables d'environnement
 const propertyId = process.env.GA4_PROPERTY_ID;
 const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
 
 // Initialisation du client GA4
 let analyticsDataClient: BetaAnalyticsDataClient | null = null;
 
 function getClient(): BetaAnalyticsDataClient {
   if (!analyticsDataClient) {
-    if (credentialsPath) {
+    // Option 1: JSON content directly (for Vercel deployment)
+    if (credentialsJson) {
+      try {
+        const credentials = JSON.parse(credentialsJson);
+        analyticsDataClient = new BetaAnalyticsDataClient({
+          credentials: credentials,
+        });
+      } catch (e) {
+        console.error('Error parsing GOOGLE_APPLICATION_CREDENTIALS_JSON:', e);
+        analyticsDataClient = new BetaAnalyticsDataClient();
+      }
+    }
+    // Option 2: File path (for local development)
+    else if (credentialsPath) {
       analyticsDataClient = new BetaAnalyticsDataClient({
         keyFilename: credentialsPath,
       });
-    } else {
+    }
+    // Option 3: Default (uses GOOGLE_APPLICATION_CREDENTIALS env automatically)
+    else {
       analyticsDataClient = new BetaAnalyticsDataClient();
     }
   }
