@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Title, AreaChart, Text, Flex, Metric, BadgeDelta, Legend } from '@tremor/react';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface BrandedTrafficData {
   date: string;
@@ -19,11 +20,8 @@ interface BrandedSummary {
   changePercent: number;
 }
 
-interface BrandedTrafficChartProps {
-  dateRange?: string;
-}
-
-export default function BrandedTrafficChart({ dateRange = '30d' }: BrandedTrafficChartProps) {
+export default function BrandedTrafficChart() {
+  const { dateRange } = useDateRange();
   const [chartData, setChartData] = useState<BrandedTrafficData[]>([]);
   const [summary, setSummary] = useState<BrandedSummary | null>(null);
   const [loading, setLoading] = useState(true);

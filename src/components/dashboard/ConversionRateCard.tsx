@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Metric, Text, Flex, BadgeDelta, ProgressBar } from '@tremor/react';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface ConversionData {
   eventName: string;
@@ -12,11 +13,8 @@ interface ConversionData {
   changePercent: number;
 }
 
-interface ConversionRateCardProps {
-  dateRange?: string;
-}
-
-export default function ConversionRateCard({ dateRange = '30d' }: ConversionRateCardProps) {
+export default function ConversionRateCard() {
+  const { dateRange } = useDateRange();
   const [data, setData] = useState<ConversionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMock, setIsMock] = useState(false);
@@ -46,11 +44,6 @@ export default function ConversionRateCard({ dateRange = '30d' }: ConversionRate
     );
   }
 
-  // Calculer le taux global (purchase + generate_lead)
-  const totalConversions = data.reduce((sum, d) => sum + d.conversions, 0);
-  const totalPreviousConversions = data.reduce((sum, d) => sum + d.previousConversions, 0);
-
-  // Moyenne pondérée des taux
   const globalRate = data.length > 0
     ? data.reduce((sum, d) => sum + d.rate, 0) / data.length
     : 0;
@@ -65,7 +58,7 @@ export default function ConversionRateCard({ dateRange = '30d' }: ConversionRate
 
   return (
     <Card>
-      <Flex justifyContent="between" alignItems="start">
+      <Flex justifyContent="between" alignItems="start" className="flex-col sm:flex-row gap-2">
         <div>
           <Text>Taux de Conversion Global</Text>
           <Metric className="mt-1">{globalRate.toFixed(2)}%</Metric>
@@ -75,7 +68,7 @@ export default function ConversionRateCard({ dateRange = '30d' }: ConversionRate
         </BadgeDelta>
       </Flex>
 
-      <Text className="mt-4 mb-2">vs mois précédent</Text>
+      <Text className="mt-4 mb-2">vs période précédente</Text>
       <ProgressBar
         value={Math.min(100, (globalRate / 10) * 100)}
         color={globalChange >= 0 ? 'emerald' : 'red'}

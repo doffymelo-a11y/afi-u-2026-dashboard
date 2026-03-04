@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Title, AreaChart, Text, Flex, Metric, BadgeDelta } from '@tremor/react';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface MERDataPoint {
   date: string;
@@ -18,11 +19,8 @@ interface GlobalMER {
   adCost: number;
 }
 
-interface MERChartLiveProps {
-  dateRange?: string;
-}
-
-export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
+export default function MERChartLive() {
+  const { dateRange } = useDateRange();
   const [chartData, setChartData] = useState<MERDataPoint[]>([]);
   const [globalMER, setGlobalMER] = useState<GlobalMER | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +30,6 @@ export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
     async function fetchData() {
       setLoading(true);
       try {
-        // Fetch both MER history and global MER
         const [merResponse, globalResponse] = await Promise.all([
           fetch(`/api/analytics?type=mer&range=${dateRange}`),
           fetch(`/api/analytics?type=mer-global&range=${dateRange}`),
@@ -61,7 +58,6 @@ export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
     );
   }
 
-  // Transformer les données pour le graphique avec les deux courbes
   const transformedData = chartData.map((point) => ({
     date: point.date,
     'Revenus (K€)': Math.round(point.revenue / 1000),
@@ -74,14 +70,14 @@ export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
 
   return (
     <Card>
-      <Flex justifyContent="between" alignItems="start">
+      <Flex justifyContent="between" alignItems="start" className="flex-col sm:flex-row gap-2">
         <div>
           <Title>Marketing Efficiency Ratio (MER)</Title>
-          <Text>Revenus globaux vs Dépenses d'acquisition</Text>
+          <Text className="hidden sm:block">Revenus globaux vs Dépenses d'acquisition</Text>
         </div>
         {globalMER && (
-          <div className="text-right">
-            <Flex justifyContent="end" alignItems="baseline" className="gap-2">
+          <div className="text-left sm:text-right">
+            <Flex justifyContent="start" alignItems="baseline" className="gap-2 sm:justify-end">
               <Metric className="text-blue-600">{globalMER.current}x</Metric>
               <BadgeDelta deltaType={deltaType}>
                 {globalMER.changePercent > 0 ? '+' : ''}{globalMER.changePercent}%
@@ -93,7 +89,7 @@ export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
       </Flex>
 
       <AreaChart
-        className="mt-4 h-72"
+        className="mt-4 h-48 sm:h-72"
         data={transformedData}
         index="date"
         categories={['Revenus (K€)', 'Dépenses (K€)']}
@@ -105,22 +101,22 @@ export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
       />
 
       {globalMER && (
-        <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 pt-4">
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4 border-t border-slate-200 pt-4">
           <div className="text-center">
-            <Text className="text-xs text-slate-500">Revenus totaux</Text>
-            <p className="text-lg font-semibold text-emerald-600">
+            <Text className="text-xs text-slate-500">Revenus</Text>
+            <p className="text-sm sm:text-lg font-semibold text-emerald-600">
               {(globalMER.revenue / 1000).toFixed(0)}K€
             </p>
           </div>
           <div className="text-center">
-            <Text className="text-xs text-slate-500">Dépenses totales</Text>
-            <p className="text-lg font-semibold text-blue-600">
+            <Text className="text-xs text-slate-500">Dépenses</Text>
+            <p className="text-sm sm:text-lg font-semibold text-blue-600">
               {(globalMER.adCost / 1000).toFixed(0)}K€
             </p>
           </div>
           <div className="text-center">
             <Text className="text-xs text-slate-500">Rentabilité</Text>
-            <p className={`text-lg font-semibold ${globalMER.current >= 3 ? 'text-emerald-600' : globalMER.current >= 2 ? 'text-amber-600' : 'text-red-600'}`}>
+            <p className={`text-sm sm:text-lg font-semibold ${globalMER.current >= 3 ? 'text-emerald-600' : globalMER.current >= 2 ? 'text-amber-600' : 'text-red-600'}`}>
               {globalMER.current >= 3 ? 'Excellente' : globalMER.current >= 2 ? 'Bonne' : 'À améliorer'}
             </p>
           </div>
@@ -129,7 +125,7 @@ export default function MERChartLive({ dateRange = '30d' }: MERChartLiveProps) {
 
       {isMock && (
         <div className="mt-3 rounded bg-amber-50 px-2 py-1">
-          <Text className="text-xs text-amber-700">Données de démonstration - Connectez GA4 pour les données réelles</Text>
+          <Text className="text-xs text-amber-700">Données de démonstration</Text>
         </div>
       )}
     </Card>
