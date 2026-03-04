@@ -24,8 +24,9 @@ function formatCurrency(num: number): string {
 }
 
 export default function ChannelsPage() {
-  const { dateRange, customDates } = useDateRange();
+  const { dateRange, customDates, comparisonEnabled, getComparisonDateStrings } = useDateRange();
   const [data, setData] = useState<ChannelData[]>([]);
+  const [comparisonData, setComparisonData] = useState<ChannelData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +40,19 @@ export default function ChannelsPage() {
         const response = await fetch(url);
         const result = await response.json();
         setData(result.data || []);
+
+        // Fetch comparison data if enabled
+        if (comparisonEnabled) {
+          const compDates = getComparisonDateStrings();
+          if (compDates) {
+            const compUrl = `/api/analytics?type=channels&range=custom&startDate=${compDates.startDate}&endDate=${compDates.endDate}`;
+            const compResponse = await fetch(compUrl);
+            const compResult = await compResponse.json();
+            setComparisonData(compResult.data || []);
+          }
+        } else {
+          setComparisonData([]);
+        }
       } catch (error) {
         console.error('Error fetching channel data:', error);
       } finally {
@@ -46,35 +60,61 @@ export default function ChannelsPage() {
       }
     }
     fetchData();
-  }, [dateRange, customDates]);
+  }, [dateRange, customDates, comparisonEnabled, getComparisonDateStrings]);
 
   // Calculer les KPIs
   const totalLeads = data.reduce((sum, ch) => sum + ch.leads + ch.conversions, 0);
   const totalCost = data.reduce((sum, ch) => sum + ch.adCost, 0);
   const blendedCPL = totalLeads > 0 ? totalCost / totalLeads : 0;
   const paidChannels = data.filter(ch => ch.adCost > 0);
-  const bestChannel = data.sort((a, b) => (b.leads + b.conversions) - (a.leads + a.conversions))[0];
+  const sortedData = [...data].sort((a, b) => (b.leads + b.conversions) - (a.leads + a.conversions));
+  const bestChannel = sortedData[0];
+
+  // Comparison KPIs
+  const compTotalLeads = comparisonData.reduce((sum, ch) => sum + ch.leads + ch.conversions, 0);
+  const compTotalCost = comparisonData.reduce((sum, ch) => sum + ch.adCost, 0);
+  const compBlendedCPL = compTotalLeads > 0 ? compTotalCost / compTotalLeads : 0;
+
+  // Helper for calculating comparison change
+  const calcChange = (current: number, comparison: number): number => {
+    if (comparisonEnabled && comparison !== 0) {
+      return ((current - comparison) / comparison) * 100;
+    }
+    return 0;
+  };
 
   const kpis = [
     {
       title: 'Blended CPL',
       value: blendedCPL > 0 ? `${blendedCPL.toFixed(2)}$` : '-',
+      change: calcChange(blendedCPL, compBlendedCPL),
       subtitle: 'Coût par lead global',
+      compValue: comparisonEnabled && compBlendedCPL > 0 ? `${compBlendedCPL.toFixed(2)}$` : null,
+      invertColor: true,
     },
     {
       title: 'Total Leads',
       value: totalLeads.toLocaleString('fr-FR'),
+      change: calcChange(totalLeads, compTotalLeads),
       subtitle: 'Leads + Conversions',
+      compValue: comparisonEnabled && compTotalLeads > 0 ? compTotalLeads.toLocaleString('fr-FR') : null,
+      invertColor: false,
     },
     {
       title: 'Canaux actifs',
       value: data.length.toString(),
+      change: 0,
       subtitle: `${paidChannels.length} payants`,
+      compValue: null,
+      invertColor: false,
     },
     {
       title: 'Meilleur canal',
       value: bestChannel?.channel || '-',
+      change: 0,
       subtitle: bestChannel ? `${(bestChannel.leads + bestChannel.conversions).toLocaleString('fr-FR')} actions` : '',
+      compValue: null,
+      invertColor: false,
     },
   ];
 
@@ -91,17 +131,31 @@ export default function ChannelsPage() {
               </Card>
             ))
           ) : (
-            kpis.map((kpi) => (
-              <Card key={kpi.title}>
-                <Flex alignItems="start" justifyContent="between">
-                  <div className="truncate">
-                    <Text className="text-xs sm:text-sm text-slate-500 truncate">{kpi.title}</Text>
-                    <Metric className="text-lg sm:text-2xl mt-1 truncate">{kpi.value}</Metric>
-                  </div>
-                </Flex>
-                <Text className="text-xs text-slate-400 mt-2 truncate">{kpi.subtitle}</Text>
-              </Card>
-            ))
+            kpis.map((kpi) => {
+              const deltaType = kpi.change > 0 ? 'increase' : kpi.change < 0 ? 'decrease' : 'unchanged';
+              const isPositive = kpi.invertColor ? kpi.change <= 0 : kpi.change >= 0;
+              return (
+                <Card key={kpi.title}>
+                  <Flex alignItems="start" justifyContent="between">
+                    <div className="truncate">
+                      <Text className="text-xs sm:text-sm text-slate-500 truncate">{kpi.title}</Text>
+                      <Metric className="text-lg sm:text-2xl mt-1 truncate">{kpi.value}</Metric>
+                    </div>
+                    {kpi.change !== 0 && (
+                      <BadgeDelta
+                        deltaType={kpi.invertColor ? (kpi.change > 0 ? 'decrease' : 'increase') : deltaType}
+                        className={`text-xs ${isPositive ? '' : 'bg-red-100 text-red-700'}`}
+                      >
+                        {kpi.change > 0 ? '+' : ''}{kpi.change.toFixed(1)}%
+                      </BadgeDelta>
+                    )}
+                  </Flex>
+                  <Text className="text-xs text-slate-400 mt-2 truncate">
+                    {kpi.compValue ? `vs ${kpi.compValue} comparé` : kpi.subtitle}
+                  </Text>
+                </Card>
+              );
+            })
           )}
         </div>
 

@@ -10,7 +10,7 @@ interface ChannelData {
   color: string;
 }
 
-const COLORS = ['blue', 'emerald', 'amber', 'indigo', 'rose'];
+const COLORS = ['blue', 'emerald', 'amber', 'indigo', 'rose', 'cyan', 'fuchsia', 'lime', 'orange', 'violet'];
 
 export default function ChannelDonut() {
   const { dateRange, customDates } = useDateRange();
@@ -56,6 +56,7 @@ export default function ChannelDonut() {
   }
 
   const totalLeads = data.reduce((sum, d) => sum + d.leads, 0);
+  const chartColors = COLORS.slice(0, data.length);
 
   return (
     <Card>
@@ -67,7 +68,7 @@ export default function ChannelDonut() {
         data={data}
         category="leads"
         index="channel"
-        colors={COLORS as ('blue' | 'emerald' | 'amber' | 'indigo' | 'rose')[]}
+        colors={chartColors}
         valueFormatter={(value) => `${value.toLocaleString('fr-FR')} leads`}
         showAnimation={true}
       />
@@ -75,7 +76,7 @@ export default function ChannelDonut() {
       <Legend
         className="mt-4"
         categories={data.map(d => d.channel)}
-        colors={COLORS as ('blue' | 'emerald' | 'amber' | 'indigo' | 'rose')[]}
+        colors={chartColors}
       />
 
       <Flex justifyContent="center" className="mt-4 pt-4 border-t border-slate-200">

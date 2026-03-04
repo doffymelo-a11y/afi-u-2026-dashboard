@@ -35,8 +35,9 @@ function formatCurrency(num: number): string {
 }
 
 export default function MERPage() {
-  const { dateRange, customDates } = useDateRange();
+  const { dateRange, customDates, comparisonEnabled, getComparisonDateStrings } = useDateRange();
   const [data, setData] = useState<MERPageData | null>(null);
+  const [comparisonData, setComparisonData] = useState<MERPageData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +53,21 @@ export default function MERPage() {
         if (result.success && result.data) {
           setData(result.data);
         }
+
+        // Fetch comparison data if enabled
+        if (comparisonEnabled) {
+          const compDates = getComparisonDateStrings();
+          if (compDates) {
+            const compUrl = `/api/analytics?type=overview&range=custom&startDate=${compDates.startDate}&endDate=${compDates.endDate}`;
+            const compResponse = await fetch(compUrl);
+            const compResult = await compResponse.json();
+            if (compResult.success && compResult.data) {
+              setComparisonData(compResult.data);
+            }
+          }
+        } else {
+          setComparisonData(null);
+        }
       } catch (error) {
         console.error('Error fetching MER page data:', error);
       } finally {
@@ -59,32 +75,45 @@ export default function MERPage() {
       }
     }
     fetchData();
-  }, [dateRange, customDates]);
+  }, [dateRange, customDates, comparisonEnabled, getComparisonDateStrings]);
+
+  // Helper for calculating comparison change
+  const calcChange = (current: number, comparison: number | undefined, fallback: number): number => {
+    if (comparisonEnabled && comparison !== undefined && comparison !== 0) {
+      return ((current - comparison) / comparison) * 100;
+    }
+    return fallback;
+  };
 
   const kpis = data ? [
     {
       title: 'MER Global',
       value: `${data.merGlobal.current.toFixed(1)}x`,
-      change: data.merGlobal.changePercent,
+      change: calcChange(data.merGlobal.current, comparisonData?.merGlobal.current, data.merGlobal.changePercent),
       subtitle: `Rev: ${formatCurrency(data.merGlobal.revenue)}`,
+      compValue: comparisonData ? `${comparisonData.merGlobal.current.toFixed(1)}x` : null,
     },
     {
       title: 'Revenus',
       value: formatCurrency(data.merGlobal.revenue),
-      change: data.merGlobal.changePercent,
+      change: calcChange(data.merGlobal.revenue, comparisonData?.merGlobal.revenue, data.merGlobal.changePercent),
       subtitle: 'Total période',
+      compValue: comparisonData ? formatCurrency(comparisonData.merGlobal.revenue) : null,
     },
     {
       title: 'Dépenses Ads',
       value: formatCurrency(data.merGlobal.adCost),
-      change: 0,
+      change: calcChange(data.merGlobal.adCost, comparisonData?.merGlobal.adCost, 0),
       subtitle: 'Budget proratisé',
+      compValue: comparisonData ? formatCurrency(comparisonData.merGlobal.adCost) : null,
     },
     {
       title: 'Blended CPL',
       value: `${data.blendedCPL.blendedCPL.toFixed(2)}$`,
-      change: 0,
+      change: calcChange(data.blendedCPL.blendedCPL, comparisonData?.blendedCPL.blendedCPL, 0),
       subtitle: `${data.blendedCPL.totalLeads + data.blendedCPL.totalConversions} actions`,
+      compValue: comparisonData ? `${comparisonData.blendedCPL.blendedCPL.toFixed(2)}$` : null,
+      invertColor: true, // Lower CPL is better
     },
   ] : [];
 
@@ -103,6 +132,7 @@ export default function MERPage() {
           ) : (
             kpis.map((kpi) => {
               const deltaType = kpi.change > 0 ? 'increase' : kpi.change < 0 ? 'decrease' : 'unchanged';
+              const isPositive = kpi.invertColor ? kpi.change <= 0 : kpi.change >= 0;
               return (
                 <Card key={kpi.title}>
                   <Flex alignItems="start" justifyContent="between">
@@ -111,12 +141,17 @@ export default function MERPage() {
                       <Metric className="text-lg sm:text-2xl mt-1 truncate">{kpi.value}</Metric>
                     </div>
                     {kpi.change !== 0 && (
-                      <BadgeDelta deltaType={deltaType} className="text-xs">
+                      <BadgeDelta
+                        deltaType={kpi.invertColor ? (kpi.change > 0 ? 'decrease' : 'increase') : deltaType}
+                        className={`text-xs ${isPositive ? '' : 'bg-red-100 text-red-700'}`}
+                      >
                         {kpi.change > 0 ? '+' : ''}{kpi.change.toFixed(1)}%
                       </BadgeDelta>
                     )}
                   </Flex>
-                  <Text className="text-xs text-slate-400 mt-2 truncate">{kpi.subtitle}</Text>
+                  <Text className="text-xs text-slate-400 mt-2 truncate">
+                    {kpi.compValue ? `vs ${kpi.compValue} comparé` : kpi.subtitle}
+                  </Text>
                 </Card>
               );
             })

@@ -42,8 +42,9 @@ function formatCurrency(num: number): string {
 }
 
 export default function ConversionsPage() {
-  const { dateRange, customDates } = useDateRange();
+  const { dateRange, customDates, comparisonEnabled, getComparisonDateStrings } = useDateRange();
   const [data, setData] = useState<ConversionPageData | null>(null);
+  const [comparisonData, setComparisonData] = useState<ConversionPageData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,6 +60,21 @@ export default function ConversionsPage() {
         if (result.success && result.data) {
           setData(result.data);
         }
+
+        // Fetch comparison data if enabled
+        if (comparisonEnabled) {
+          const compDates = getComparisonDateStrings();
+          if (compDates) {
+            const compUrl = `/api/analytics?type=overview&range=custom&startDate=${compDates.startDate}&endDate=${compDates.endDate}`;
+            const compResponse = await fetch(compUrl);
+            const compResult = await compResponse.json();
+            if (compResult.success && compResult.data) {
+              setComparisonData(compResult.data);
+            }
+          }
+        } else {
+          setComparisonData(null);
+        }
       } catch (error) {
         console.error('Error fetching conversion data:', error);
       } finally {
@@ -66,7 +82,7 @@ export default function ConversionsPage() {
       }
     }
     fetchData();
-  }, [dateRange, customDates]);
+  }, [dateRange, customDates, comparisonEnabled, getComparisonDateStrings]);
 
   // Extraire les métriques
   const purchases = data?.conversions?.find(c => c.eventName === 'purchase');
@@ -74,12 +90,28 @@ export default function ConversionsPage() {
   const globalRate = data?.overview
     ? (data.overview.conversions / data.overview.sessions) * 100
     : 0;
+
+  // Comparison metrics
+  const compPurchases = comparisonData?.conversions?.find(c => c.eventName === 'purchase');
+  const compLeads = comparisonData?.conversions?.find(c => c.eventName === 'generate_lead');
+  const compGlobalRate = comparisonData?.overview
+    ? (comparisonData.overview.conversions / comparisonData.overview.sessions) * 100
+    : 0;
+
+  // Helper for calculating comparison change
+  const calcChange = (current: number, comparison: number | undefined, fallback: number): number => {
+    if (comparisonEnabled && comparison !== undefined && comparison !== 0) {
+      return ((current - comparison) / comparison) * 100;
+    }
+    return fallback;
+  };
+
   const previousGlobalRate = data?.overview?.previousSessions
     ? (data.overview.previousConversions / data.overview.previousSessions) * 100
     : 0;
-  const globalRateChange = previousGlobalRate > 0
-    ? ((globalRate - previousGlobalRate) / previousGlobalRate) * 100
-    : 0;
+  const globalRateChange = calcChange(globalRate, compGlobalRate,
+    previousGlobalRate > 0 ? ((globalRate - previousGlobalRate) / previousGlobalRate) * 100 : 0
+  );
 
   const kpis = data ? [
     {
@@ -87,24 +119,28 @@ export default function ConversionsPage() {
       value: `${globalRate.toFixed(2)}%`,
       change: globalRateChange,
       subtitle: `vs ${previousGlobalRate.toFixed(2)}% précédent`,
+      compValue: comparisonEnabled && compGlobalRate > 0 ? `${compGlobalRate.toFixed(2)}%` : null,
     },
     {
       title: 'Purchases',
       value: formatNumber(purchases?.conversions || 0),
-      change: purchases?.changePercent || 0,
+      change: calcChange(purchases?.conversions || 0, compPurchases?.conversions, purchases?.changePercent || 0),
       subtitle: `Taux: ${purchases?.rate?.toFixed(2) || 0}%`,
+      compValue: comparisonEnabled && compPurchases ? formatNumber(compPurchases.conversions) : null,
     },
     {
       title: 'Leads générés',
       value: formatNumber(leads?.conversions || 0),
-      change: leads?.changePercent || 0,
+      change: calcChange(leads?.conversions || 0, compLeads?.conversions, leads?.changePercent || 0),
       subtitle: `Taux: ${leads?.rate?.toFixed(2) || 0}%`,
+      compValue: comparisonEnabled && compLeads ? formatNumber(compLeads.conversions) : null,
     },
     {
       title: 'Valeur totale',
       value: formatCurrency(data.merGlobal?.revenue || 0),
-      change: 0,
+      change: calcChange(data.merGlobal?.revenue || 0, comparisonData?.merGlobal?.revenue, 0),
       subtitle: 'Revenus période',
+      compValue: comparisonEnabled && comparisonData?.merGlobal ? formatCurrency(comparisonData.merGlobal.revenue) : null,
     },
   ] : [];
 
@@ -162,7 +198,9 @@ export default function ConversionsPage() {
                       </BadgeDelta>
                     )}
                   </Flex>
-                  <Text className="text-xs text-slate-400 mt-2 truncate">{kpi.subtitle}</Text>
+                  <Text className="text-xs text-slate-400 mt-2 truncate">
+                    {kpi.compValue ? `vs ${kpi.compValue} comparé` : kpi.subtitle}
+                  </Text>
                 </Card>
               );
             })
