@@ -97,11 +97,7 @@ export async function GET(request: Request) {
 
   try {
     // Vérifier si GA4 est configuré
-    console.log('[GA4 DEBUG] Property ID:', process.env.GA4_PROPERTY_ID);
-    console.log('[GA4 DEBUG] Credentials path:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
-
     if (!process.env.GA4_PROPERTY_ID) {
-      console.log('[GA4 DEBUG] No property ID - returning mock data');
       return NextResponse.json({
         success: true,
         mock: true,
@@ -150,7 +146,6 @@ export async function GET(request: Request) {
         break;
     }
 
-    console.log('[GA4 DEBUG] Data returned:', JSON.stringify(data).substring(0, 500));
     return NextResponse.json({
       success: true,
       mock: false,
@@ -158,9 +153,7 @@ export async function GET(request: Request) {
       data,
     });
   } catch (error) {
-    console.error('[GA4 DEBUG] API Error:', error);
-    console.error('[GA4 DEBUG] Error message:', error instanceof Error ? error.message : 'Unknown');
-    console.error('[GA4 DEBUG] Error stack:', error instanceof Error ? error.stack : 'No stack');
+    console.error('[GA4] API Error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       {
         success: false,
