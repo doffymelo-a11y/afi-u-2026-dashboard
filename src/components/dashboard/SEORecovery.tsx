@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Title, LineChart, Text, Flex, Metric, BadgeDelta } from '@tremor/react';
+import { Card, Title, LineChart, Text, Flex, Metric } from '@tremor/react';
 import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface BrandedData {
@@ -93,9 +93,13 @@ export default function SEORecovery() {
             <Metric className={growthPercent >= 0 ? 'text-emerald-600' : 'text-red-600'}>
               {growthPercent >= 0 ? '+' : ''}{growthPercent.toFixed(1)}%
             </Metric>
-            <BadgeDelta deltaType={growthPercent >= 0 ? 'increase' : 'decrease'}>
-              {growthPercent >= 0 ? 'Hausse' : 'Baisse'}
-            </BadgeDelta>
+            <span
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white ${
+                growthPercent >= 0 ? 'bg-emerald-500' : 'bg-red-500'
+              }`}
+            >
+              {growthPercent >= 0 ? '↑ Hausse' : '↓ Baisse'}
+            </span>
           </Flex>
         </div>
       </Flex>

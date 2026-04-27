@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Title, AreaChart, Text, Flex, Metric, BadgeDelta } from '@tremor/react';
+import { Card, Title, AreaChart, Text, Flex, Metric } from '@tremor/react';
 import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface MERDataPoint {
@@ -93,8 +93,7 @@ export default function MERChartLive() {
     ? ((globalMER.current - comparisonMER.current) / comparisonMER.current) * 100
     : globalMER?.changePercent || 0;
 
-  const deltaType = changePercent > 0 ? 'increase' :
-                    changePercent < 0 ? 'decrease' : 'unchanged';
+  const isPositive = changePercent >= 0;
 
   return (
     <Card>
@@ -107,9 +106,13 @@ export default function MERChartLive() {
           <div className="text-left sm:text-right">
             <Flex justifyContent="start" alignItems="baseline" className="gap-2 sm:justify-end">
               <Metric className="text-blue-600">{globalMER.current.toFixed(1)}x</Metric>
-              <BadgeDelta deltaType={deltaType}>
-                {changePercent > 0 ? '+' : ''}{changePercent.toFixed(1)}%
-              </BadgeDelta>
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white ${
+                  isPositive ? 'bg-emerald-500' : 'bg-red-500'
+                }`}
+              >
+                {isPositive ? '↑' : '↓'} {changePercent > 0 ? '+' : ''}{changePercent.toFixed(1)}%
+              </span>
             </Flex>
             <Text className="text-xs text-slate-500">
               {comparisonMER

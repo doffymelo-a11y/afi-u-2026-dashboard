@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Title, AreaChart, Text, Flex, Metric, BadgeDelta, Legend } from '@tremor/react';
+import { Card, Title, AreaChart, Text, Flex, Metric, Legend } from '@tremor/react';
 import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface BrandedTrafficData {
@@ -85,9 +85,13 @@ export default function BrandedTrafficChart() {
           <div className="text-right">
             <Flex justifyContent="end" alignItems="baseline" className="gap-2">
               <Metric className="text-blue-600">{summary.brandedPercent}%</Metric>
-              <BadgeDelta deltaType={deltaType}>
-                {summary.changePercent > 0 ? '+' : ''}{summary.changePercent}%
-              </BadgeDelta>
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white ${
+                  summary.trend === 'up' ? 'bg-emerald-500' : summary.trend === 'down' ? 'bg-red-500' : 'bg-slate-500'
+                }`}
+              >
+                {summary.trend === 'up' ? '↑' : summary.trend === 'down' ? '↓' : '→'} {summary.changePercent > 0 ? '+' : ''}{summary.changePercent}%
+              </span>
             </Flex>
             <Text className="text-xs text-slate-500">Part du trafic Branded</Text>
           </div>

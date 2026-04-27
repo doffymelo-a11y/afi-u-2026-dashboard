@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Metric, Text, Flex, BadgeDelta, ProgressBar } from '@tremor/react';
+import { Card, Metric, Text, Flex, ProgressBar } from '@tremor/react';
 import { useDateRange } from '@/contexts/DateRangeContext';
 
 interface ConversionData {
@@ -82,7 +82,7 @@ export default function ConversionRateCard() {
     ? ((globalRate - referenceRate) / referenceRate) * 100
     : 0;
 
-  const deltaType = globalChange > 0 ? 'increase' : globalChange < 0 ? 'decrease' : 'unchanged';
+  const isPositive = globalChange >= 0;
 
   // Helper to get comparison item
   const getComparisonItem = (eventName: string) => {
@@ -96,9 +96,13 @@ export default function ConversionRateCard() {
           <Text>Taux de Conversion Global</Text>
           <Metric className="mt-1">{globalRate.toFixed(2)}%</Metric>
         </div>
-        <BadgeDelta deltaType={deltaType}>
-          {globalChange > 0 ? '+' : ''}{globalChange.toFixed(1)}%
-        </BadgeDelta>
+        <span
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white ${
+            isPositive ? 'bg-emerald-500' : 'bg-red-500'
+          }`}
+        >
+          {isPositive ? '↑' : '↓'} {globalChange > 0 ? '+' : ''}{globalChange.toFixed(1)}%
+        </span>
       </Flex>
 
       <Text className="mt-4 mb-2">
@@ -127,9 +131,13 @@ export default function ConversionRateCard() {
               <p className="text-lg font-semibold text-slate-900">
                 {item.conversions.toLocaleString('fr-FR')}
               </p>
-              <Text className={`text-xs ${itemChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {itemChange > 0 ? '+' : ''}{itemChange.toFixed(1)}%
-              </Text>
+              <span
+                className={`inline-flex items-center justify-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium text-white ${
+                  itemChange >= 0 ? 'bg-emerald-500' : 'bg-red-500'
+                }`}
+              >
+                {itemChange >= 0 ? '↑' : '↓'}{itemChange > 0 ? '+' : ''}{itemChange.toFixed(1)}%
+              </span>
               {comparisonEnabled && compItem && (
                 <Text className="text-xs text-slate-400">
                   vs {compItem.conversions.toLocaleString('fr-FR')}

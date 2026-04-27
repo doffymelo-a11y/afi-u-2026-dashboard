@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Text, Metric, Flex, BadgeDelta } from '@tremor/react';
+import { Card, Text, Metric, Flex } from '@tremor/react';
 import Header from '@/components/layout/Header';
 import ConversionRateCard from '@/components/dashboard/ConversionRateCard';
 import ConversionTable from '@/components/dashboard/ConversionTable';
@@ -193,9 +193,13 @@ export default function ConversionsPage() {
                       <Metric className="text-lg sm:text-2xl mt-1 truncate">{kpi.value}</Metric>
                     </div>
                     {kpi.change !== 0 && (
-                      <BadgeDelta deltaType={deltaType} className="text-xs">
-                        {kpi.change > 0 ? '+' : ''}{kpi.change.toFixed(1)}%
-                      </BadgeDelta>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white ${
+                          kpi.change >= 0 ? 'bg-emerald-500' : 'bg-red-500'
+                        }`}
+                      >
+                        {kpi.change >= 0 ? '↑' : '↓'} {kpi.change > 0 ? '+' : ''}{kpi.change.toFixed(1)}%
+                      </span>
                     )}
                   </Flex>
                   <Text className="text-xs text-slate-400 mt-2 truncate">

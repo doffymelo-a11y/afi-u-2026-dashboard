@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Text, Metric, Flex, BadgeDelta, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Badge } from '@tremor/react';
+import { Card, Text, Metric, Flex, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Badge } from '@tremor/react';
 import Header from '@/components/layout/Header';
 import ChannelDonut from '@/components/dashboard/ChannelDonut';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -142,12 +142,13 @@ export default function ChannelsPage() {
                       <Metric className="text-lg sm:text-2xl mt-1 truncate">{kpi.value}</Metric>
                     </div>
                     {kpi.change !== 0 && (
-                      <BadgeDelta
-                        deltaType={kpi.invertColor ? (kpi.change > 0 ? 'decrease' : 'increase') : deltaType}
-                        className={`text-xs ${isPositive ? '' : 'bg-red-100 text-red-700'}`}
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white ${
+                          isPositive ? 'bg-emerald-500' : 'bg-red-500'
+                        }`}
                       >
-                        {kpi.change > 0 ? '+' : ''}{kpi.change.toFixed(1)}%
-                      </BadgeDelta>
+                        {isPositive ? '↑' : '↓'} {kpi.change > 0 ? '+' : ''}{kpi.change.toFixed(1)}%
+                      </span>
                     )}
                   </Flex>
                   <Text className="text-xs text-slate-400 mt-2 truncate">
